@@ -8,6 +8,7 @@ require 'spree/core'
 module Spree
   class InstallGenerator < Rails::Generators::Base
     class_option :migrate, type: :boolean, default: true, banner: 'Run Spree migrations'
+    class_option :mailers_previews, type: :boolean, default: true, banner: 'include mailers previews'
     class_option :seed, type: :boolean, default: true, banner: 'load seed data (migrations must be run)'
     class_option :sample, type: :boolean, default: true, banner: 'load sample data (migrations must be run)'
     class_option :copy_storefront, type: :boolean, default: true, banner: 'copy storefront from spree frontend to your application for easy customization'
@@ -31,10 +32,12 @@ module Spree
       @load_seed_data = options[:seed]
       @load_sample_data = options[:sample]
       @copy_storefront = options[:copy_storefront]
+      @copy_mailers_previews = options[:mailers_previews]
 
       unless @run_migrations
         @load_seed_data = false
         @load_sample_data = false
+        @copy_mailers_previews = false
       end
     end
 
@@ -178,6 +181,19 @@ module Spree
         end
       else
         say_status :skipping, 'seed data (you can always run rake db:seed)'
+      end
+    end
+
+    def include_mailers_previews
+      if @copy_mailers_previews
+        say_status :copying, 'mailers previews'
+        preview_path = Rails.application.config.action_mailer.preview_path || 'test/mailers/previews'
+
+        template 'mailers/previews/order_preview.rb', "#{preview_path}/order_preview.rb"
+        template 'mailers/previews/shipment_preview.rb', "#{preview_path}/shipment_preview.rb"
+        template 'mailers/previews/reimbursement_preview.rb', "#{preview_path}/reimbursement_preview.rb"
+      else
+        say_status :skipping, 'mailers previews (you can create mailers previews if needed)'
       end
     end
 
